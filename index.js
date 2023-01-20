@@ -7,12 +7,41 @@ const cors = require("cors");
 const app = express();
 //프로세서의 주소 포트번호 지정
 const port = 8080;
+
+const multer = require("multer");
+console.log(multer)
+
+//서버의 upload를 클라이언트 접근가능하도록 설정
+app.use("/upload", express.static("upload"));
 //통신하기위한 데이터포멧 json
 //json 형식의 데이터를 처리할수 있도록 설정
 app.use(express.json()); //use 사용할거다 제이슨 데이터
 //브라우저의 cors이슈를 막기위해 사용하는 코드
 app.use(cors());
+//diskStroage()----------> 파일을 저장할때의 모든 제어 기능을 제공
+const storage = multer.diskStorage({
+    destination: (req, file, cb) =>{
+        cb(null, 'upload/');     ///함수고 업로드파일이 담긴다 근데 암호화상태로 담김
+    },
+    filename: (req, file, cb) => {  //여기서 암호화된 파일명을 원본 파일명으로 바꿔줌
+        const newFilename = file.originalname;
+        cb(null, newFilename);
+    }
+})
 //get요청시 응답 app.get(경로, 콜백함수)
+
+//파일요청시 파일이 저장될 경로와 파일이름 지정
+const upload = multer({storage: storage});
+
+app.post('/upload', upload.single('file'), (req, res)=> {
+    res.send({
+        imageUrl: req.file.filename
+    })
+});
+
+
+
+
 //연결선 만들기
 const conn = mysql.createConnection({
     host: "localhost",
@@ -26,14 +55,31 @@ conn.connect();
 
 
 app.get("/products", (req, res)=>{
-    conn.query("select*from products", function(error, result, fields){
+    conn.query(`select*from products`, 
+    function(error, result, fields){
         res.send(result)
     });
 })
+//addProduct post요청이 오면 처리
+//req =>요청하는 객체 res =>응답하는 객체
+app.post("/addProduct",async (req, res) => {
+    //console.log(req)
+    const { p_name, p_price, p_desc, p_img, p_quantity} = req.body;  //밑에 줄 매개변수 3개 넣어줌
+    conn.query("insert into products(p_name, p_price, p_desc, p_img, p_quantity) values(?,?,?,?,?)",
+    [p_name, p_price, p_desc, p_img, p_quantity],
+    (err, result, fields)=>{
+        res.send("ok");
+    })
+})
+
 app.get("/products/:id", (req, res)=>{
     const params = req.params  //{id: 2}
     const {id} = params;
-    res.send(`id는 ${id}이다.`)
+    conn.query(`select*from products where p_id=${id}`, 
+    function(error, result, fields){
+        res.send(result)
+    });
+    
 })
 //서버를 구동
 app.listen(port, ()=>{
