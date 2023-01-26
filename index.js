@@ -44,9 +44,9 @@ app.post('/upload', upload.single('file'), (req, res)=> {
 
 //연결선 만들기
 const conn = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "1234",
+    host: "hera-database.c6v9c00axeyk.ap-northeast-2.rds.amazonaws.com",
+    user: "admin",
+    password: "alstjq12$!!",
     database: "shopping"
 })
 
